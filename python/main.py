@@ -1,24 +1,30 @@
-@bot.message_handler(commands=['add_proxy'])
-async def add_proxy(message):
-    User = Users_Model.getUser(chat_id=message.chat.id)
-    if User[4] == 20:
-        proxy_data = message.text.replace('/add_proxy ', '').split('\n')
+from tkinter import *
+from speedtest import Speedtest
 
-        position_id = proxy_data[0].split(':')[1]
+root = Tk()
+# Name
+root.title('maruv.sss')
+# Размер 300 ширина 400 высота
+root.geometry("400x400")
 
-        del proxy_data[0]
 
-        try:
-            for proxy_item in proxy_data:
-                ip, port, username, password = proxy_item.split(':')
+def test():
+    download = Speedtest().download()
+    upload = Speedtest().upload()
+    download_speed = round(download / (10 ** 6), 2)
+    upload_speed = round(upload / (10 ** 6), 2)
+    download_speed.config(text="Скорость загрузки:" + str(download_speed) +"MbPs")
+    download_speed.config(text="Скорость отдачи:"+ str(upload_speed)+"MbPs")
 
-                # await bot.send_message(message.chat.id, f"\n{ip}\n{port}\n{username}\n{password}")
 
-                Proxies_Model.addProxy(proxy_host=ip + ':' + port, proxy_user=username, proxy_password=password,
-                                       position_id=position_id)
+button = Button(root, text='Начать', font=40, command=test)
 
-            await bot.send_message(message.chat.id, '✅ Прокси успешно добавлены')
-        except:
-            await bot.send_message(message.chat.id, '📛 Прокси некорректны и не могут быть добавлены')
-    else:
-        await bot.send_message(message.chat.id, '⛔️ Вы не являетесь администратором!')
+download_label = Label(root, text='Скорость загрузки:', font=30)
+download_label.pack(pady=(50, 0))
+upload_label = Label(root, text='Скорость отдачи:', font=30)
+upload_label.pack(pady=50)
+
+button.pack(side=BOTTOM, pady=10)
+
+# Позволяет не закрываться программе пока, пользователь этого не захочет
+root.mainloop()
