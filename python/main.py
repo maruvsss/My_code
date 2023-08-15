@@ -1,21 +1,22 @@
 from tkinter import *
 from speedtest import Speedtest
 
-root = Tk()
-# Name
-root.title('maruv.sss')
-# Размер 300 ширина 400 высота
-root.geometry("400x400")
-
 
 def test():
     download = Speedtest().download()
     upload = Speedtest().upload()
     download_speed = round(download / (10 ** 6), 2)
     upload_speed = round(upload / (10 ** 6), 2)
-    download_speed.config(text="Скорость загрузки:" + str(download_speed) +"MbPs")
-    download_speed.config(text="Скорость отдачи:"+ str(upload_speed)+"MbPs")
 
+    download_label.config(text="Скорость загрузки:" + str(download_speed) + "MbPs")
+    upload_label.config(text="Скорость отдачи:" + str(upload_speed) + "MbPs")
+
+
+root = Tk()
+# Name
+root.title('maruv.sss')
+# Размер 300 ширина 400 высота
+root.geometry("400x400")
 
 button = Button(root, text='Начать', font=40, command=test)
 
