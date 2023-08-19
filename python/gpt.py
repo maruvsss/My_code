@@ -21,7 +21,7 @@ async def message(message):
     user_message = message.text  # Получаем сообщение пользователя
     username = message.from_user.username
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4",
         messages=[{"role": "system", "content": "Вы — помощник по поиску фильмов."},
                   {"role": "user", "content": user_message}],
         temperature=0.5,

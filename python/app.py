@@ -5,8 +5,8 @@ from kivy.config import Config
 
 # Убирает возможность изменять размер программы
 Config.set('graphics', 'resizable', '0');
-Config.set('graphics', 'width', '1284');
-Config.set('graphics', 'height', '2778');
+Config.set('graphics', 'width', '390');
+Config.set('graphics', 'height', '844');
 
 
 class MyApp(App):
