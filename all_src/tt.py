@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher, executor, types
 import aiohttp
 import re
-
+import sqlite3
 token = "6697800196:AAHCmTjokC_iE97W9grQYY3KAajgIHNs4rA"
 
 bot = Bot(token=token)
@@ -25,7 +25,7 @@ async def process(message: types.Message):
         m = await message.reply('🕗 Ожидайте видео скачивается...')
         video = await download(message.text)
         await bot.delete_message(message.chat.id, m['message_id'])
-        await message.answer_video(video, caption=f'🎉 <b>Готово!</b>',parse_mode='html')
+        await message.answer_video(video    , caption=f'🎉 <b>Готово!</b>',parse_mode='html')
     else:
         await message.reply('⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',parse_mode='html')
 
