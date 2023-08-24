@@ -8,11 +8,10 @@ from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 from dotenv import load_dotenv, find_dotenv
 
-
 load_dotenv(find_dotenv())
 bot = AsyncTeleBot(os.getenv('TOKEN_BOT'))
 
-db = sqlite3.connect('db/ttsavee.db',check_same_thread=False)
+db = sqlite3.connect('db/ttsavee.db', check_same_thread=False)
 sql = db.cursor()
 
 sql.execute("""CREATE TABLE IF NOT EXISTS users(
@@ -23,22 +22,23 @@ sql.execute("""CREATE TABLE IF NOT EXISTS users(
 
 admin_id = 1900666417
 
+
 @bot.message_handler(commands=['sendall'])
 async def send_all_message(message: types.Message):
-
     sql.execute("SELECT tg_id FROM users;")
     users = sql.fetchall()
     if message.chat.id == admin_id:
-        await bot.send_message(message.chat.id,'Starting')
+        await bot.send_message(message.chat.id, 'Starting')
         for i in users:
             try:
                 print("Send to: ", str(i[0]))
-                await bot.send_message(i[0],message.text[message.text.find(' '):])
+                await bot.send_message(i[0], message.text[message.text.find(' '):])
             except Exception as error:
                 print("Blocked bot: ", str(i[0]))
-            #await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
+            # await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
     else:
-        await bot.send_message(message.chat.id,'Вы не являетесь администратором!')
+        await bot.send_message(message.chat.id, 'Вы не являетесь администратором!')
+
 
 async def download(url):
     async with aiohttp.ClientSession() as session:
@@ -57,7 +57,7 @@ async def command_start(message):
     sql.execute(f"SELECT tg_id FROM users WHERE tg_id={tg_id}")
     data = sql.fetchone()
     if data is None:
-        sql.execute("INSERT INTO users VALUES (?,?,?)",(None,tg_id,date))
+        sql.execute("INSERT INTO users VALUES (?,?,?)", (None, tg_id, date))
         db.commit()
 
     await bot.send_message(message.chat.id,
@@ -71,7 +71,7 @@ async def process(message):
         loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
         video = await download(message.text)
         await bot.delete_message(message.chat.id, loading.message_id)
-        await bot.send_video(message.chat.id, video,caption='🎉 Поздравляю, видео успешно скачено!')
+        await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
     else:
         await bot.send_message(message.chat.id,
                                '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
