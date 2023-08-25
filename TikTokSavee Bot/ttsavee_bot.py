@@ -4,6 +4,7 @@ import asyncio
 import os
 import aiohttp
 import datetime
+import pyshorteners
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 from dotenv import load_dotenv, find_dotenv
@@ -70,6 +71,7 @@ async def process(message):
     if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
         loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
         video = await download(message.text)
+
         await bot.delete_message(message.chat.id, loading.message_id)
         await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
     else:
