@@ -5,6 +5,7 @@ import os
 import aiohttp
 import datetime
 import pyshorteners
+import requests
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 from dotenv import load_dotenv, find_dotenv
@@ -68,16 +69,28 @@ async def command_start(message):
 
 @bot.message_handler()
 async def process(message):
-    if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
-        loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
+    try:
+        if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
+            loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
+            video = await download(message.text)
+
+            await bot.delete_message(message.chat.id, loading.message_id)
+            await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
+        else:
+            await bot.send_message(message.chat.id,
+                                   '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
+                                   parse_mode='html')
+    except:
+        loading = await bot.send_message(message.chat.id, '🕗 Видео немного большое ,ожидайте видео скачивается...')
         video = await download(message.text)
+        response = requests.get(video)
+        with open("ttsavee.mp4", "wb") as file:
+            file.write(response.content)
+        document = open("ttsavee.mp4", "wb")
 
         await bot.delete_message(message.chat.id, loading.message_id)
-        await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
-    else:
-        await bot.send_message(message.chat.id,
-                               '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
-                               parse_mode='html')
+        await bot.send_document(message.chat.id, document, caption='🎉 Поздравляю, видео успешно скачено!')
+        os.remove("ttsavee.mp4")
 
 
 asyncio.run(bot.polling(non_stop=True))
