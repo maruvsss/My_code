@@ -90,10 +90,12 @@ async def process(message):
             response = requests.get(video)
             with open("ttsavee.mp4", "wb") as file:
                 file.write(response.content)
-            with open("ttsavee.mp4", 'rb') as video_file:
-                await bot.send_document(message.chat.id, video_file, caption='🎉 Поздравляю, видео успешно скачено!')
-                await bot.delete_message(message.chat.id, loading.message_id)
+            result = open("ttsavee.mp4", 'rb')
 
+            await bot.send_document(message.chat.id, result, caption='🎉 Поздравляю, видео успешно скачено!')
+            await bot.delete_message(message.chat.id, loading.message_id)
+            os.remove("ttsavee.mp4")
+            
             # with open("ttsavee.mp4", "wb") as file:
             #     file.write(response.content)
             # document = open("ttsavee.mp4", "wb")
