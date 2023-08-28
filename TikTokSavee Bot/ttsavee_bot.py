@@ -4,15 +4,13 @@ import asyncio
 import os
 import aiohttp
 import datetime
-import moviepy.video.io.VideoFileClip
+
 import pyshorteners
 import requests
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 from dotenv import load_dotenv, find_dotenv
-from moviepy.editor import *
-from moviepy.editor import VideoFileClip
-from io import BytesIO
+
 
 import imageio
 imageio.plugins.ffmpeg.download()
@@ -38,14 +36,15 @@ async def send_all_message(message: types.Message):
     sql.execute("SELECT tg_id FROM users;")
     users = sql.fetchall()
     if message.chat.id == admin_id:
-        await bot.send_message(message.chat.id, 'Starting')
+        await bot.send_message(message.chat.id, '💌 Starting')
         for i in users:
             try:
                 print("Send to: ", str(i[0]))
-                await bot.send_message(i[0], message.text[message.text.find(' '):])
+                await bot.send_message(i[0], message.text[message.text.find(' '):],parse_mode='html')
             except Exception as error:
                 print("Blocked bot: ", str(i[0]))
             # await bot.send_message(i[0],message.text[message.text.find(' '):],parse_mode='html')
+        await bot.send_message(message.chat.id, '✅ Successfully')
     else:
         await bot.send_message(message.chat.id, 'Вы не являетесь администратором!')
 
@@ -78,11 +77,14 @@ async def command_start(message):
 @bot.message_handler()
 async def process(message):
     if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
+        sticker = await bot.send_sticker(message.chat.id, "CAACAgIAAxkBAAEKIxtk6pqNbeyXirz3RDS4vp2oXIjzyQACeQAD5KDOB6RRas-jTv2HMAQ")
         loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
         video = await download(message.text)
 
         try:
+
                 await bot.delete_message(message.chat.id, loading.message_id)
+                await bot.delete_message(message.chat.id, sticker.message_id)
                 await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
 
         except:
@@ -92,18 +94,10 @@ async def process(message):
                 file.write(response.content)
             result = open("ttsavee.mp4", 'rb')
 
-            await bot.send_document(message.chat.id, result, caption='🎉 Поздравляю, видео успешно скачено!')
+            await bot.send_document(message.chat.id, result,caption='🎉 Поздравляю, видео успешно скачено!')
             await bot.delete_message(message.chat.id, loading.message_id)
             os.remove("ttsavee.mp4")
-            
-            # with open("ttsavee.mp4", "wb") as file:
-            #     file.write(response.content)
-            # document = open("ttsavee.mp4", "wb")
-            # clip = moviepy.video.io.VideoFileClip.VideoFileClip('ttsavee.mp4')
-            # clip.write_videofile('new_video.mp4')
-            # await bot.delete_message(message.chat.id, loading.message_id)
-            # await bot.send_document(message.chat.id, document, caption='🎉 Поздравляю, видео успешно скачено!')
-            # os.remove("ttsavee.mp4")
+
     else:
         await bot.send_message(message.chat.id,
                             '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
