@@ -24,14 +24,8 @@ sql.execute("""CREATE TABLE IF NOT EXISTS users(
 
 admin_id = 1900666417
 video = None
-CHANNELS = [["1й Канал ", "-1001717313870", "https://t.me/maruvsss"],
-            ["2й Канал ", "-1001717313870", "https://t.me/maruvsss"]]
-
-
-# keyboard = telebot.types.InlineKeyboardMarkup()
-# subscribe = telebot.types.InlineKeyboardButton(text="Подписаться", url="https://t.me/maruvsss")
-# check = telebot.types.InlineKeyboardButton(text="Проверить", callback_data="check")
-# keyboard.add(subscribe,check)
+CHANNELS = [["✍🏻 Подписаться", "-1001717313870", "https://t.me/maruvsss"],
+            ["✍🏻 Подписаться", "-1001253161726", "https://t.me/+YJ0_aG9JyKNjN2Fi"]]
 
 keyboard = types.InlineKeyboardMarkup()
 
@@ -40,7 +34,6 @@ for channel in CHANNELS:
     keyboard.add(btn)
 button_done_sub = types.InlineKeyboardButton(text='♻️ Проверить', callback_data='subchanneldone')
 keyboard.add(button_done_sub)
-
 
 
 async def check_sub_channels(channels, user_id):
@@ -80,7 +73,7 @@ async def download(url):
 
 @bot.message_handler(commands=['start'])
 async def command_start(message):
-    if await check_sub_channels(CHANNELS, message.from_user.id):
+    if await check_sub_channels(CHANNELS, message.chat.id):
         date = datetime.datetime.now()
         tg_id = message.from_user.id
 
@@ -94,24 +87,27 @@ async def command_start(message):
                                '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
                                parse_mode='html')
     else:
-        await bot.send_message(message.chat.id, '❗ Для доступа к боту,необходимо подписаться на канал',
+        await bot.send_message(message.chat.id, '👻 Для доступа к боту,необходимо подписаться на канал',
                                reply_markup=keyboard)
 
 
 @bot.message_handler()
 async def process(message):
     if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
-        # sticker = await bot.send_sticker(message.chat.id, "CAACAgIAAxkBAAEKIxtk6pqNbeyXirz3RDS4vp2oXIjzyQACeQAD5KDOB6RRas-jTv2HMAQ")
+        sticker = await bot.send_sticker(message.chat.id,
+                                         "CAACAgIAAxkBAAEKIxtk6pqNbeyXirz3RDS4vp2oXIjzyQACeQAD5KDOB6RRas-jTv2HMAQ")
         loading = await bot.send_message(message.chat.id, '🕗 Ожидайте видео скачивается...')
         video = await download(message.text)
 
         try:
 
             await bot.delete_message(message.chat.id, loading.message_id)
-            # await bot.delete_message(message.chat.id, sticker.message_id)
+            await bot.delete_message(message.chat.id, sticker.message_id)
             await bot.send_video(message.chat.id, video, caption='🎉 Поздравляю, видео успешно скачено!')
 
         except:
+            sticker = await bot.send_sticker(message.chat.id,
+                                             "CAACAgIAAxkBAAEKKWhk7fzCtX_iaxOxfrN345XD23_65QACbwAD5KDOBwj7OOarOaTFMAQ")
             loading = await bot.send_message(message.chat.id, '😅 Ого ,тяжеленький, ожидайте видео скачивается...')
             response = requests.get(video)
             with open("ttsavee.mp4", "wb") as file:
@@ -120,24 +116,28 @@ async def process(message):
 
             await bot.send_document(message.chat.id, result, caption='🎉 Поздравляю, видео успешно скачено!')
             await bot.delete_message(message.chat.id, loading.message_id)
+            await bot.delete_message(message.chat.id, sticker.message_id)
             os.remove("ttsavee.mp4")
 
     else:
         await bot.send_message(message.chat.id,
                                '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
                                parse_mode='html')
-@bot.callback_query_handler(func=lambda callback: callback.data)
-async def callback(callback):
-    if callback.data == "subchanneldone":
-        await bot.delete_message(callback.message.chat.id, callback.message.message_id)
 
-        if await check_sub_channels(CHANNELS, callback.message.from_user.id):
-            await bot.send_message(callback.message.chat.id,
-                                   '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
-                                   parse_mode='html')
-        else:
-            await bot.send_message(callback.message.chat.id, '❗ Для доступа к боту,необходимо подписаться на канал',
-                                   reply_markup=keyboard)
+
+@bot.callback_query_handler(func=lambda callback: callback.data == "subchanneldone")
+async def callback_handler(callback):
+    await bot.delete_message(callback.message.chat.id, callback.message.message_id)
+    if await check_sub_channels(CHANNELS, callback.message.chat.id):
+        await bot.send_message(callback.message.chat.id,
+                               '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
+                               parse_mode='html')
+    else:
+        await bot.send_message(callback.message.chat.id,
+                               '👻 Для доступа к боту,необходимо подписаться на канал',
+                               reply_markup=keyboard)
+
+
 
 
 asyncio.run(bot.polling(non_stop=True))

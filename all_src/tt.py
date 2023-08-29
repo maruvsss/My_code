@@ -1,71 +1,88 @@
-import requests
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, ConversationHandler, CallbackContext, Filters
+import re
+import sqlite3
+import datetime
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils import executor
+from dotenv import load_dotenv, find_dotenv
+import aiohttp
 
-# Остальной код остается без изменений
+load_dotenv(find_dotenv())
+TOKEN_BOT = '6697800196:AAHCmTjokC_iE97W9grQYY3KAajgIHNs4rA'
 
-# Состояния для конечного автомата
-START, ENTER_URL = range(2)
+bot = Bot(token=TOKEN_BOT)
+dp = Dispatcher(bot)
+logging_middleware = LoggingMiddleware()
+dp.middleware.setup(logging_middleware)
 
-# Глобальная переменная для хранения URL видео
-video_url = None
+# db = sqlite3.connect('db/ttsavee.db', check_same_thread=False)
+# sql = db.cursor()
 
-# Здесь укажите ваш ключ API Douyin (или TikTok)
-DOUYIN_API_KEY = 'YOUR_DOUYIN_API_KEY'
+# sql.execute("""CREATE TABLE IF NOT EXISTS users(
+#     id integer PRIMARY KEY AUTOINCREMENT,
+#     tg_id integer,
+#     date date
+# )""")
 
-# Функция для получения видео без водяных знаков с помощью Douyin API
-def get_video_without_watermark(url):
-    try:
-        # Отправляем запрос к Douyin API
-        response = requests.get(f'https://api.douyin.qlike.cn/api?url={url}&apikey={DOUYIN_API_KEY}')
-        data = response.json()
-        if 'data' in data and 'video_no_watermark' in data['data']:
-            return data['data']['video_no_watermark']
-        else:
-            return None
-    except Exception as e:
-        print(f"Ошибка при получении видео: {e}")
-        return None
+admin_id = 1900666417
 
-# Обработчик команды /start
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Привет! Отправь мне ссылку на видео из TikTok, и я отправлю его без водяных знаков.")
 
-    return ENTER_URL
+# @dp.message_handler(commands=['sendall'])
+# async def send_all_message(message: types.Message):
+#     sql.execute("SELECT tg_id FROM users;")
+#     users = sql.fetchall()
+#     if message.chat.id == admin_id:
+#         await message.reply('Starting')
+#         for i in users:
+#             try:
+#                 print("Send to: ", str(i[0]))
+#                 await bot.send_message(i[0], message.text[message.text.find(' '):])
+#             except Exception as error:
+#                 print("Blocked bot: ", str(i[0]))
+#     else:
+#         await message.reply('Вы не являетесь администратором!')
 
-# Обработчик ввода URL
-def enter_url(update: Update, context: CallbackContext):
-    global video_url
-    video_url = update.message.text
 
-    # Получаем видео без водяных знаков
-    video_without_watermark = get_video_without_watermark(video_url)
+async def download(url):
+    async with aiohttp.ClientSession() as session:
+        request_url = f'https://api.douyin.wtf/api?url={url}'
+        async with session.get(request_url) as response:
+            data = await response.json()
+            video = data['video_data']['nwm_video_url_HQ']
+            return video
 
-    if video_without_watermark:
-        # Отправляем видео пользователю
-        update.message.reply_video(video=video_without_watermark)
-    else:
-        update.message.reply_text("Не удалось получить видео без водяных знаков. Проверьте ссылку и попробуйте ещё раз.")
 
-    return ConversationHandler.END
+@dp.message_handler(commands=['start'])
+async def command_start(message: types.Message):
+    # date = datetime.datetime.now()
+    # tg_id = message.from_user.id
+    #
+    # sql.execute(f"SELECT tg_id FROM users WHERE tg_id={tg_id}")
+    # data = sql.fetchone()
+    # if data is None:
+    #     sql.execute("INSERT INTO users VALUES (?,?,?)", (None, tg_id, date))
+    #     db.commit()
 
-# Главная функция для запуска бота
-def main():
-    updater = Updater(token='YOUR_TELEGRAM_BOT_TOKEN', use_context=True)
-    dispatcher = updater.dispatcher
-
-    # Создаем конечный автомат для обработки ввода URL
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-        states={
-            ENTER_URL: [MessageHandler(Filters.text & ~Filters.command, enter_url)],
-        },
-        fallbacks=[],
+    await message.reply(
+        '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
+        parse_mode='html'
     )
-    dispatcher.add_handler(conv_handler)
 
-    updater.start_polling()
-    updater.idle()
+
+@dp.message_handler()
+async def process(message: types.Message):
+    if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
+        loading = await message.reply('🕗 Ожидайте видео скачивается...')
+        video = await download(message.text)
+        await bot.delete_message(message.chat.id, loading.message_id)
+        await message.reply_video(video, caption='🎉 Поздравляю, видео успешно скачено!')
+    else:
+        await message.reply(
+            '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
+            parse_mode='html'
+        )
+
 
 if __name__ == '__main__':
-    main()
+    from aiogram import executor
+    executor.start_polling(dp, skip_updates=True)
