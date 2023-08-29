@@ -73,7 +73,7 @@ async def download(url):
 
 @bot.message_handler(commands=['start'])
 async def command_start(message):
-    if await check_sub_channels(CHANNELS, message.chat.id):
+    # if await check_sub_channels(CHANNELS, message.chat.id):
         date = datetime.datetime.now()
         tg_id = message.from_user.id
 
@@ -82,13 +82,13 @@ async def command_start(message):
         if data is None:
             sql.execute("INSERT INTO users VALUES (?,?,?)", (None, tg_id, date))
             db.commit()
-
-        await bot.send_message(message.chat.id,
-                               '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
+        img = open("img/start.png","rb")
+        await bot.send_photo(message.chat.id,img,
+                               caption='<b>Привет! Добро пожаловать к нам в видеобот TikTokSavee!👋</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков.\n\n<b>Наслаждайтесь просмотром! 🎉</b>\n Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать: <b>@maruvvvs</b> 😊📹',
                                parse_mode='html')
-    else:
-        await bot.send_message(message.chat.id, '👻 Для доступа к боту,необходимо подписаться на канал',
-                               reply_markup=keyboard)
+    # else:
+    #     await bot.send_message(message.chat.id, '👻 Для доступа к боту,необходимо подписаться на канал',
+    #                            reply_markup=keyboard)
 
 
 @bot.message_handler()
