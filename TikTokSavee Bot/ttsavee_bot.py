@@ -9,6 +9,7 @@ import telebot
 from telebot.async_telebot import AsyncTeleBot
 from telebot import types
 from dotenv import load_dotenv, find_dotenv
+from typing import Optional, Generator
 
 load_dotenv(find_dotenv())
 bot = AsyncTeleBot(os.getenv('TOKEN_BOT'))
@@ -23,7 +24,7 @@ sql.execute("""CREATE TABLE IF NOT EXISTS users(
 )""")
 
 admin_id = 1900666417
-video = None
+
 CHANNELS = [["✍🏻 Подписаться", "-1001717313870", "https://t.me/maruvsss"],
             ["✍🏻 Подписаться", "-1001253161726", "https://t.me/+YJ0_aG9JyKNjN2Fi"]]
 
@@ -71,24 +72,28 @@ async def download(url):
             return video
 
 
+
+
 @bot.message_handler(commands=['start'])
 async def command_start(message):
     # if await check_sub_channels(CHANNELS, message.chat.id):
-        date = datetime.datetime.now()
-        tg_id = message.from_user.id
+    date = datetime.datetime.now()
+    tg_id = message.from_user.id
 
-        sql.execute(f"SELECT tg_id FROM users WHERE tg_id={tg_id}")
-        data = sql.fetchone()
-        if data is None:
-            sql.execute("INSERT INTO users VALUES (?,?,?)", (None, tg_id, date))
-            db.commit()
-        img = open("img/start.png","rb")
-        await bot.send_photo(message.chat.id,img,
-                               caption='<b>Привет! Добро пожаловать к нам в видеобот TikTokSavee!👋</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков.\n\n<b>Наслаждайтесь просмотром! 🎉</b>\n Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать: <b>@maruvvvs</b> 😊📹',
-                               parse_mode='html')
-    # else:
-    #     await bot.send_message(message.chat.id, '👻 Для доступа к боту,необходимо подписаться на канал',
-    #                            reply_markup=keyboard)
+    sql.execute(f"SELECT tg_id FROM users WHERE tg_id={tg_id}")
+    data = sql.fetchone()
+    if data is None:
+        sql.execute("INSERT INTO users VALUES (?,?,?)", (None, tg_id, date))
+        db.commit()
+    img = open("img/start.png", "rb")
+    await bot.send_photo(message.chat.id, img,
+                         caption='<b>Привет! Добро пожаловать к нам в видеобот TikTokSavee!👋</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков.\n\n<b>Наслаждайтесь просмотром! 🎉</b>\n Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать: <b>@maruvvvs</b> 😊📹',
+                         parse_mode='html')
+
+
+# else:
+#     await bot.send_message(message.chat.id, '👻 Для доступа к боту,необходимо подписаться на канал',
+#                            reply_markup=keyboard)
 
 
 @bot.message_handler()
@@ -136,8 +141,6 @@ async def callback_handler(callback):
         await bot.send_message(callback.message.chat.id,
                                '👻 Для доступа к боту,необходимо подписаться на канал',
                                reply_markup=keyboard)
-
-
 
 
 asyncio.run(bot.polling(non_stop=True))

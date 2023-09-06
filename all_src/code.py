@@ -1,83 +1,37 @@
-import re
-import sqlite3
-import datetime
-from aiogram import Bot, Dispatcher, types
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from aiogram.utils import executor
-import requests
-import aiohttp
-import os
 
-TOKEN_BOT = '6697800196:AAHCmTjokC_iE97W9grQYY3KAajgIHNs4rA'
+h = {
+    'Connection': 'keep-alive',
+    'DNT': '1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+    'Accept-Encoding': 'gzip, deflate, br'
+    }
 
-bot = Bot(token=TOKEN_BOT)
-dp = Dispatcher(bot)
-logging_middleware = LoggingMiddleware()
-dp.middleware.setup(logging_middleware)
+s = requests.session()
+s.headers = h
+s.proxies = {'http': 'http://127.0.0.1:10809', 'https': 'https://127.0.0.1:10809'}
 
+def get_video_url(url):
+    """
+    获取tiktok视频，返回下载地址
+    :param url: t.co短链接
+    :return:
+    """
+    res = s.get(url=url, timeout=18)
+    video_url = re.search('\"downloadAddr\":\"(.+?)\"', res.text).group(1)
+    return video_url.replace('\\u0026', '&') if len(video_url)!=0 else None
 
-admin_id = 1900666417
-
-
-def download(url):
-    request_url = f'https://api.douyin.wtf/api?url={url}'
-    response = requests.get(request_url)
-    if response.status_code == 200:
-        data = response.json()
-        video_url = data["video_data"]["wm_video_url_HQ"]
-        return video_url
-    else:
-        return None
-
-@dp.message_handler(commands=['start'])
-async def command_start(message: types.Message):
-
-    await message.reply(
-        '<b>Привет! Добро пожаловать к нам в видеобот TikTok! 🎉</b>\n\nМы рады видеть тебя здесь. Просто дайте мне ссылку на видео с TikTok, и я отправлю вам это видео без водяных знаков отправителя. Наслаждайтесь просмотром! Если у тебя есть какие-либо вопросы или запросы, не стесняйся спрашивать. 😊📹',
-        parse_mode='html'
-    )
-
-@dp.message_handler()
-async def process(message: types.Message):
-    if re.compile('https://[a-zA-Z]+.tiktok.com/').match(message.text):
-        loading = await message.reply('🕗 Ожидайте видео скачивается...')
-        video_url = download(message.text)
-
-        if video_url:
-            video_filename = await save_video_locally(video_url)
-
-            if video_filename:
-                with open(video_filename, 'rb') as video_file:
-                    await bot.send_video(message.chat.id, video_file, caption='🎉 Поздравляю, видео успешно скачено!')
-                os.remove(video_filename)
-            else:
-                await message.reply('❌ Произошла ошибка при сохранении видео.')
-        else:
-            await message.reply('❌ Произошла ошибка при скачивании видео.')
-
-        await bot.delete_message(message.chat.id, loading.message_id)
-    else:
-        await message.reply(
-            '⛔️ В данный момент возможность загрузки видео доступна только из <b>TikTok</b>',
-            parse_mode='html'
-        )
-
-async def save_video_locally(video_url):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(video_url) as response:
-            if response.status == 200:
-                video_filename = 'downloaded_video.mp4'
-
-                with open(video_filename, 'wb') as file:
-                    while True:
-                        chunk = await response.content.read(1024)
-                        if not chunk:
-                            break
-                        file.write(chunk)
-
-                return video_filename
-            else:
-                return None
-
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+def download(video_url):
+    """
+    下载视频
+    :param video_url: tiktok视频链接
+    """
+    h1 = h.copy()
+    h1['Referer'] = 'https://www.tiktok.com/'
+    h1['Accept-Encoding'] = 'identity;q=1, *;q=0'
+    h1['Range'] = 'bytes=0-'
+    res = s.get(video_url, headers=h1)
+    file_name = str(datetime.datetime.now().strftime('%y%m%d%H%M'))+'.mp4'
+    with open('.\\'+file_name,'wb') as f:
+        f.write(res.content)
+    return f.name
