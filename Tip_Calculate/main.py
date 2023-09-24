@@ -24,7 +24,7 @@ load_dotenv(find_dotenv())
 bot = AsyncTeleBot(os.getenv('TOKEN_BOT'))
 
 
-cal = calendar.month(2023, 9)
+# cal = calendar.month(2023, 9)
 @bot.message_handler(commands=['start'])
 async def start_command(message):
     tg_id= message.chat.id
@@ -39,14 +39,13 @@ async def start_command(message):
     await bot.send_message(message.chat.id,f'Select {LSTEP[step]}',reply_markup = calendar)
 
 
-@bot.message_handler(content_types=['text'])
-async def text(message):
-    await bot.send_message(message.chat.id,'Your tip is saved')
+# @bot.message_handler(content_types=['text'])
+# async def text(message):
+#     await bot.send_message(message.chat.id,'Your tip is saved')
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
 
 async def cal(c):
-    balance = 0
     result, key, step = DetailedTelegramCalendar().process(c.data)
 
     if not result and key:
@@ -54,6 +53,13 @@ async def cal(c):
         await bot.edit_message_text(f'Select {LSTEP[step]}',c.message.chat.id,c.message.message_id,reply_markup=key)
 
     elif result:
+        tg_id = c.message.chat.id
+        sql.execute("SELECT tip FROM tip WHERE tg_id=? AND date=?", (tg_id, result))
+        balance = sql.fetchall()
+        print(balance, result)
+        await bot.edit_message_text(f'В этот день {result} ваш чай :{balance[0][0]} ',c.message.chat.id,c.message.message_id)
+    else:
+        await bot.edit_message_text(f'В этот день {result} у вас не было чаевых\nВведите сумму в чат что бы записать', c.message.chat.id,
+                                    c.message.message_id)
 
-        await bot.edit_message_text(f'В этот день {result} ваш чай :{balance} ',c.message.chat.id,c.message.message_id)
 asyncio.run(bot.polling(non_stop=True))
